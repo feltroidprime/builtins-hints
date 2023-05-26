@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use num_bigint::{BigInt, RandBigInt, ToBigInt};
 use num_integer::Integer;
-use num_traits::Zero;
+use num_traits::{One, Signed, Zero};
 use std::str::FromStr;
 
 const BASE_BITS: u32 = 86;
@@ -53,15 +53,23 @@ fn main() {
     mul_hint(a_limbs, b_limbs);
 }
 
-fn mul_hint(a_limbs: Vec<BigInt>, b_limbs: Vec<BigInt>) {
+fn mul_hint(
+    a_limbs: Vec<BigInt>,
+    b_limbs: Vec<BigInt>,
+) -> (Vec<BigInt>, Vec<BigInt>, Vec<BigInt>, Vec<BigInt>) {
     let a = eval(&a_limbs);
     let b = eval(&b_limbs);
     let c = a * b;
     let (q, r) = c.div_rem(&P);
     let qs = split(q);
     let rs = split(r);
-    let _val_limbs = poly_mul(a_limbs, b_limbs);
-    let _q_p_plus_r_limbs = poly_mul_plus_c(qs, P_LIMBS.to_vec(), rs);
+    let val_limbs = poly_mul(a_limbs, b_limbs);
+    let q_p_plus_r_limbs = poly_mul_plus_c(&qs, &P_LIMBS.to_vec(), &rs);
+    let diff_limbs = poly_sub(&q_p_plus_r_limbs, &val_limbs, N_LIMBS_UNREDUCED);
+    let carries = reduce_zero_poly(&diff_limbs);
+    let carries = abs_poly(&carries);
+    let flag_poly = flag_poly(&diff_limbs);
+    return (qs, rs, carries, flag_poly);
 }
 
 fn split(x: BigInt) -> Vec<BigInt> {
@@ -97,7 +105,7 @@ fn poly_mul(a: Vec<BigInt>, b: Vec<BigInt>) -> Vec<BigInt> {
     result
 }
 
-fn poly_mul_plus_c(a: Vec<BigInt>, b: Vec<BigInt>, c: Vec<BigInt>) -> Vec<BigInt> {
+fn poly_mul_plus_c(a: &[BigInt], b: &[BigInt], c: &[BigInt]) -> Vec<BigInt> {
     let mut result = vec![BigInt::zero(); N_LIMBS_UNREDUCED];
     for i in 0..N_LIMBS {
         for j in 0..N_LIMBS {
@@ -111,7 +119,7 @@ fn poly_mul_plus_c(a: Vec<BigInt>, b: Vec<BigInt>, c: Vec<BigInt>) -> Vec<BigInt
     return result;
 }
 
-fn _poly_sub(a: &[BigInt], b: &[BigInt], n: usize) -> Vec<BigInt> {
+fn poly_sub(a: &[BigInt], b: &[BigInt], n: usize) -> Vec<BigInt> {
     assert_eq!(a.len(), n);
     assert_eq!(b.len(), n);
 
@@ -122,16 +130,36 @@ fn _poly_sub(a: &[BigInt], b: &[BigInt], n: usize) -> Vec<BigInt> {
     return result;
 }
 
-fn _abs_poly(x: &[BigInt]) -> Vec<BigInt> {
-    x.iter().cloned().collect()
+fn abs_poly(x: &[BigInt]) -> Vec<BigInt> {
+    let mut result = Vec::with_capacity(x.len());
+
+    for n in x {
+        result.push(n.abs());
+    }
+
+    return result;
 }
 
-fn _reduce_zero_poly(x: &[BigInt], base: &BigInt) -> Vec<BigInt> {
+fn flag_poly(x: &[BigInt]) -> Vec<BigInt> {
+    let mut result = Vec::with_capacity(x.len());
+
+    for n in x {
+        if n >= &BigInt::zero() {
+            result.push(BigInt::one());
+        } else {
+            result.push(BigInt::zero());
+        }
+    }
+
+    result
+}
+
+fn reduce_zero_poly(x: &[BigInt]) -> Vec<BigInt> {
     let mut x = x.to_owned();
     let mut carries = vec![BigInt::zero(); x.len() - 1];
 
     for i in 0..x.len() - 1 {
-        let (q, r) = x[i].clone().div_mod_floor(base);
+        let (q, r) = x[i].clone().div_rem(&BASE);
         carries[i] = q;
         x[i] = r;
         assert!(x[i].is_zero());
