@@ -55,6 +55,8 @@ fn main() {
     println!("ok")
 }
 
+// Inputs : 2 * N_LIMBS felts
+// Ouputs : 2 * N_LIMBS felts + 2 * (UNREDUCED_N_LIMBS - 1) felts
 fn mul_hint(
     a_limbs: Vec<BigInt>,
     b_limbs: Vec<BigInt>,
