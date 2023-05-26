@@ -31,13 +31,14 @@ lazy_static! {
     };
     static ref P_LIMBS: Vec<BigInt> = {
         let mut limbs = Vec::with_capacity(N_LIMBS);
-        limbs[0] = P0.clone();
-        limbs[1] = P1.clone();
-        limbs[2] = P2.clone();
+        limbs.push(P0.clone());
+        limbs.push(P1.clone());
+        limbs.push(P2.clone());
         limbs
     };
 
 }
+
 fn main() {
     println!("Hello, world!");
     println!("The value of BASE is: {}", *BASE);
@@ -51,6 +52,7 @@ fn main() {
     let b_limbs = split(b);
 
     mul_hint(a_limbs, b_limbs);
+    println!("ok")
 }
 
 fn mul_hint(
@@ -141,9 +143,9 @@ fn abs_poly(x: &[BigInt]) -> Vec<BigInt> {
 }
 
 fn flag_poly(x: &[BigInt]) -> Vec<BigInt> {
-    let mut result = Vec::with_capacity(x.len());
+    let mut result = Vec::with_capacity(N_LIMBS_UNREDUCED - 1);
 
-    for n in x {
+    for n in &x[..N_LIMBS_UNREDUCED - 1] {
         if n >= &BigInt::zero() {
             result.push(BigInt::one());
         } else {
