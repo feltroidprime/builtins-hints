@@ -200,10 +200,10 @@ def assert_row(rows:list, index:int):
     next_res = [rows[index+1][i].value for i in range(RES, AIR_N_COLUMNS)]
     add_diff_assertion = 0
     for i in range(N_LIMBS_UNREDUCED):
-        add_diff_assertion += di[i] * (res[i] + val0 * val1 - next_res[i]) % NATIVE_PRIME
+        add_diff_assertion += (res[i] + di[i] * val0 * val1 - next_res[i]) % NATIVE_PRIME
     sub_diff_assertion = 0
     for i in range(N_LIMBS_UNREDUCED):
-        sub_diff_assertion += di[i] * (res[i] - val0 * val1 - next_res[i]) % NATIVE_PRIME
+        sub_diff_assertion += (res[i] - di[i] * val0 * val1 - next_res[i]) % NATIVE_PRIME
 
     add_diff_assertion = add_diff_assertion % NATIVE_PRIME
     sub_diff_assertion = sub_diff_assertion % NATIVE_PRIME
